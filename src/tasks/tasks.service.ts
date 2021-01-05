@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Query } from '@nestjs/common';
 import { Task, TaskStatus } from './task.model';
-import { uuid } from 'uuidv4';
+import { v4 as uuid } from 'uuid';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
+import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
 
 @Injectable()
 export class TasksService {
@@ -11,8 +11,27 @@ export class TasksService {
   getTaskById(id: string): Task {
     return this.tasks.find((task) => task.id === id);
   }
-  getAllTasks() {
+
+  getTasks(): Task[] {
     return this.tasks;
+  }
+
+  getTasksWithFilter(@Query() filterDto: GetTasksFilterDto): Task[] {
+    const { status, search } = filterDto;
+
+    let tasks = this.getTasks();
+
+    if (status) {
+      tasks = tasks.filter((task) => task.status === status);
+    }
+
+    if (search) {
+      tasks = tasks.filter((task) => {
+        return task.title.includes(search) || task.description.includes(search);
+      });
+    }
+
+    return tasks;
   }
 
   createTask(createTaskDto: CreateTaskDto): Task {
@@ -28,9 +47,9 @@ export class TasksService {
     return task;
   }
 
-  updateTaskById(id: string, updateTaskDto: UpdateTaskDto): Task {
-    const task = this.tasks.find((task) => task.id === id);
-    Object.assign(task, updateTaskDto);
+  updateTaskStatus(id: string, status: TaskStatus): Task {
+    const task = this.getTaskById(id);
+    Object.assign(task, status);
     return task;
   }
 
