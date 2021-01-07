@@ -1,4 +1,4 @@
-import { TaskStatus } from '../task.model';
+import { TaskStatus } from '../types/task.status.enum';
 
 export class UpdateTaskDto {
   title: string;
