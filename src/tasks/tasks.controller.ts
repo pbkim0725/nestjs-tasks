@@ -6,42 +6,48 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
-import { Task, TaskStatus } from './task.model';
 import { TasksService } from './tasks.service';
+import { TaskStatusValidationPipe } from './pipes/task-status-validation.pipe';
+import { Task } from './task.entity';
+import { TaskStatus } from './types/task.status.enum';
 
 @Controller('tasks')
 export class TasksController {
   constructor(private tasksService: TasksService) {}
 
   @Get('/:id')
-  getTaskById(@Param('id') id: string): Task {
-    return this.tasksService.getTaskById(id);
+  getTask(@Param('id', ParseIntPipe) id: number): Promise<Task> {
+    return this.tasksService.getTask(id);
   }
 
   @Get()
-  getTasks(@Query() filterDto: GetTasksFilterDto): Task[] {
-    if (Object.keys(filterDto).length) {
-      return this.tasksService.getTasksWithFilter(filterDto);
-    }
-    return this.tasksService.getTasks();
+  getTasks(@Query(ValidationPipe) filterDto: GetTasksFilterDto) {
+    return this.tasksService.getTasks(filterDto);
   }
 
   @Post()
+  @UsePipes(ValidationPipe)
   async createTask(@Body() createTaskDto: CreateTaskDto): Promise<Task> {
     return this.tasksService.createTask(createTaskDto);
   }
 
   @Patch('/:id/status')
-  updateTaskStatus(@Param('id') id: string, @Body() status: TaskStatus): Task {
+  updateTaskStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status', new TaskStatusValidationPipe()) status: TaskStatus,
+  ): Promise<Task> {
     return this.tasksService.updateTaskStatus(id, status);
   }
 
   @Delete('/:id')
-  deleteTaskById(@Param('id') id: string): void {
-    this.tasksService.deleteTaskById(id);
+  deleteTask(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.tasksService.deleteTask(id);
   }
 }
